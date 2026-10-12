@@ -2,17 +2,20 @@ import { tmdbFetch } from "./client";
 
 import {
   adaptCredits,
+  adaptEpisodeDetails,
   adaptGenres,
   adaptKeywords,
   adaptMovieDetails,
   adaptPaginatedMedia,
   adaptPerson,
+  adaptPersonCombinedCredits,
+  adaptPersonDetails,
   adaptRecommendations,
   adaptTVDetails,
   adaptVideos,
   adaptWatchProviders,
 } from "./adapters";
-import { seasonSchema, episodeSchema } from "./schemas";
+import { seasonSchema } from "./schemas";
 import { buildDiscoverParams, type DiscoverFilters } from "@/lib/discover/filters";
 
 const DEFAULT_LANG = "en-US";
@@ -262,6 +265,7 @@ export async function getSeasonDetails(
     episodeCount: parsed.episodes.length,
     episodes: parsed.episodes.map((ep) => ({
       id: ep.id,
+      showId: seriesId,
       seasonNumber: parsed.season_number,
       episodeNumber: ep.episode_number,
       name: ep.name,
@@ -270,6 +274,9 @@ export async function getSeasonDetails(
       airDate: ep.air_date,
       runtime: ep.runtime ?? null,
       voteAverage: ep.vote_average,
+      voteCount: 0,
+      guestStars: [],
+      crew: [],
     })),
   };
 }
@@ -280,29 +287,13 @@ export async function getEpisodeDetails(
   episodeNumber: number,
   language = DEFAULT_LANG,
 ) {
-  const data = await tmdbFetch(
-    `/tv/${seriesId}/season/${seasonNumber}/episode/${episodeNumber}`,
-    { params: { language }, revalidate: 86400 },
+  return adaptEpisodeDetails(
+    await tmdbFetch(`/tv/${seriesId}/season/${seasonNumber}/episode/${episodeNumber}`, {
+      params: { language },
+      revalidate: 86400,
+    }),
+    seriesId,
   );
-  const parsed = episodeSchema.parse(data);
-  return {
-    id: parsed.id,
-    seasonNumber: parsed.season_number,
-    episodeNumber: parsed.episode_number,
-    name: parsed.name,
-    overview: parsed.overview,
-    stillPath: parsed.still_path,
-    airDate: parsed.air_date,
-    runtime: parsed.runtime ?? null,
-    voteAverage: parsed.vote_average,
-    guestStars: parsed.guest_stars?.map((g) => ({
-      id: g.id,
-      name: g.name,
-      profilePath: g.profile_path,
-      character: g.character,
-      order: 0,
-    })) ?? [],
-  };
 }
 
 // ============================================================
@@ -429,4 +420,19 @@ export async function getPersonDetails(
       revalidate: 86400,
     }),
   );
+}
+
+export async function getPersonFullDetails(
+  id: number,
+  language = DEFAULT_LANG,
+) {
+  const [details, credits] = await Promise.all([
+    tmdbFetch(`/person/${id}`, { params: { language }, revalidate: 86400 }),
+    tmdbFetch(`/person/${id}/combined_credits`, { params: { language }, revalidate: 86400 }),
+  ]);
+
+  return {
+    person: adaptPersonDetails(details),
+    filmography: adaptPersonCombinedCredits(credits),
+  };
 }

@@ -16,10 +16,15 @@ export const qk = {
 
   movieDetails: (id: number) => ["tmdb", "movie", id] as const,
   tvDetails: (id: number) => ["tmdb", "tv", id] as const,
+  seasonDetails: (id: number, seasonNumber: number) =>
+    ["tmdb", "tv", id, "season", seasonNumber] as const,
+  episodeDetails: (id: number, seasonNumber: number, episodeNumber: number) =>
+    ["tmdb", "tv", id, "season", seasonNumber, "episode", episodeNumber] as const,
 
   search: (type: "multi" | "movie" | "tv", query: string, page: number) =>
     ["tmdb", "search", type, query, page] as const,
 
   genres: (type: "movie" | "tv") => ["tmdb", "genres", type] as const,
   person: (id: number) => ["tmdb", "person", id] as const,
+  personDetails: (id: number) => ["tmdb", "person", id, "details"] as const,
 };

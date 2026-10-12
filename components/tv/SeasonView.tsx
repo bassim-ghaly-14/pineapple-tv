@@ -127,7 +127,12 @@ export function SeasonView({ season, tv, cast }: Props) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <h3 className="text-sm font-semibold text-text">
-                      {episode.episodeNumber}. {episode.name}
+                      <Link
+                        href={`/tv/${season.showId}/season/${season.seasonNumber}/episode/${episode.episodeNumber}`}
+                        className="rounded hover:text-accent hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      >
+                        {episode.episodeNumber}. {episode.name}
+                      </Link>
                     </h3>
                     <div className="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-muted">
                       {episode.airDate && <span>{formatDate(episode.airDate)}</span>}
@@ -136,15 +141,16 @@ export function SeasonView({ season, tv, cast }: Props) {
                     </div>
                   </div>
                   <button
-                    onClick={() =>
+                    onClick={(e) => {
+                      e.preventDefault();
                       toggleEpisodeWatched(
                         season.showId,
                         season.seasonNumber,
                         episode.episodeNumber,
                         !watched,
                         { title: tv.title, posterPath: tv.posterPath },
-                      )
-                    }
+                      );
+                    }}
                     aria-pressed={watched}
                     aria-label={watched ? "Mark as unwatched" : "Mark as watched"}
                     className={cn(

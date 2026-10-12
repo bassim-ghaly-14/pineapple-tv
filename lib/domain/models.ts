@@ -53,6 +53,7 @@ export interface Season {
 
 export interface Episode {
   id: number;
+  showId: number;
   seasonNumber: number;
   episodeNumber: number;
   name: string;
@@ -61,6 +62,38 @@ export interface Episode {
   airDate: string | null;
   runtime: number | null;
   voteAverage: number;
+  voteCount: number;
+  guestStars: CastMember[];
+  crew: CrewMember[];
+}
+
+export interface PersonDetails {
+  id: number;
+  name: string;
+  biography: string;
+  profilePath: string | null;
+  knownForDepartment: string | null;
+  birthday: string | null;
+  deathday: string | null;
+  placeOfBirth: string | null;
+  alsoKnownAs: string[];
+  imdbId: string | null;
+  homepage: string | null;
+}
+
+export interface PersonActingCredit extends MediaSummary {
+  character: string;
+  order: number;
+}
+
+export interface PersonCrewCredit extends MediaSummary {
+  job: string;
+  department: string;
+}
+
+export interface PersonFilmography {
+  cast: PersonActingCredit[];
+  crew: PersonCrewCredit[];
 }
 
 export interface Person {

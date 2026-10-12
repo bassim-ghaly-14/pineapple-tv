@@ -191,6 +191,8 @@ export const episodeSchema = z.object({
   air_date: z.string().nullable(),
   runtime: z.number().nullable().optional(),
   vote_average: z.number().default(0),
+  vote_count: z.number().default(0),
+  crew: z.array(crewSchema).optional(),
   guest_stars: z.array(guestStarSchema).optional(),
 });
 
@@ -203,7 +205,57 @@ export const personSchema = z.object({
   profile_path: z.string().nullable(),
   known_for_department: z.string().nullable(),
   birthday: z.string().nullable().optional(),
+  deathday: z.string().nullable().optional(),
   place_of_birth: z.string().nullable().optional(),
+  also_known_as: z.array(z.string()).optional(),
+  imdb_id: z.string().nullable().optional(),
+  homepage: z.string().nullable().optional(),
+});
+
+const combinedCastCreditSchema = z.object({
+  id: z.number(),
+  media_type: z.string().optional(),
+  title: z.string().nullish(),
+  name: z.string().nullish(),
+  original_title: z.string().nullish(),
+  original_name: z.string().nullish(),
+  overview: z.string().default(""),
+  poster_path: z.string().nullable(),
+  backdrop_path: z.string().nullable(),
+  release_date: z.string().nullable().optional(),
+  first_air_date: z.string().nullable().optional(),
+  vote_average: z.number().default(0),
+  vote_count: z.number().default(0),
+  popularity: z.number().default(0),
+  genre_ids: z.array(z.number()).nullish(),
+  character: z.string().nullish().default(""),
+  order: z.number().nullish().default(0),
+});
+
+const combinedCrewCreditSchema = z.object({
+  id: z.number(),
+  media_type: z.string().optional(),
+  title: z.string().nullish(),
+  name: z.string().nullish(),
+  original_title: z.string().nullish(),
+  original_name: z.string().nullish(),
+  overview: z.string().default(""),
+  poster_path: z.string().nullable(),
+  backdrop_path: z.string().nullable(),
+  release_date: z.string().nullable().optional(),
+  first_air_date: z.string().nullable().optional(),
+  vote_average: z.number().default(0),
+  vote_count: z.number().default(0),
+  popularity: z.number().default(0),
+  genre_ids: z.array(z.number()).nullish(),
+  job: z.string().nullish().default(""),
+  department: z.string().nullish().default(""),
+});
+
+export const personCombinedCreditsSchema = z.object({
+  id: z.number(),
+  cast: z.array(combinedCastCreditSchema).default([]),
+  crew: z.array(combinedCrewCreditSchema).default([]),
 });
 
 // ---- Genres ----

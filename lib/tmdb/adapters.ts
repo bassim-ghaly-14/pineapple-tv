@@ -1,20 +1,27 @@
 import type {
   CastMember,
   CrewMember,
+  Episode,
   Genre,
   MediaSummary,
   Movie,
   Person,
+  PersonActingCredit,
+  PersonCrewCredit,
+  PersonDetails,
+  PersonFilmography,
   TVShow,
   Video,
 } from "@/lib/domain/models";
 
 import {
   creditsSchema,
+  episodeSchema,
   genreListSchema,
   keywordsSchema,
   movieDetailsSchema,
   paginatedMediaSchema,
+  personCombinedCreditsSchema,
   personSchema,
   tvDetailsSchema,
   videosSchema,
@@ -218,6 +225,116 @@ export function adaptPerson(data: unknown): Person {
     knownForDepartment: person.known_for_department,
     knownFor: [],
   };
+}
+
+export function adaptPersonDetails(data: unknown): PersonDetails {
+  const person = personSchema.parse(data);
+
+  return {
+    id: person.id,
+    name: person.name,
+    biography: person.biography ?? "",
+    profilePath: person.profile_path,
+    knownForDepartment: person.known_for_department,
+    birthday: person.birthday ?? null,
+    deathday: person.deathday ?? null,
+    placeOfBirth: person.place_of_birth ?? null,
+    alsoKnownAs: person.also_known_as ?? [],
+    imdbId: person.imdb_id ?? null,
+    homepage: person.homepage ?? null,
+  };
+}
+
+export function adaptEpisodeDetails(data: unknown, showId: number): Episode {
+  const parsed = episodeSchema.parse(data);
+
+  return {
+    id: parsed.id,
+    showId,
+    seasonNumber: parsed.season_number,
+    episodeNumber: parsed.episode_number,
+    name: parsed.name,
+    overview: parsed.overview ?? "",
+    stillPath: parsed.still_path,
+    airDate: parsed.air_date,
+    runtime: parsed.runtime ?? null,
+    voteAverage: parsed.vote_average ?? 0,
+    voteCount: parsed.vote_count ?? 0,
+    guestStars:
+      parsed.guest_stars?.map((g) => ({
+        id: g.id,
+        name: g.name,
+        profilePath: g.profile_path,
+        character: g.character ?? "",
+        order: 0,
+      })) ?? [],
+    crew:
+      parsed.crew?.map((c) => ({
+        id: c.id,
+        name: c.name,
+        profilePath: c.profile_path,
+        job: c.job ?? "",
+        department: c.department ?? "",
+      })) ?? [],
+  };
+}
+
+function toMediaSummaryForCredit(raw: {
+  id: number;
+  media_type?: string;
+  title?: string | null;
+  name?: string | null;
+  overview?: string;
+  poster_path: string | null;
+  backdrop_path: string | null;
+  release_date?: string | null;
+  first_air_date?: string | null;
+  vote_average?: number;
+  vote_count?: number;
+}): MediaSummary | null {
+  const mediaType =
+    raw.media_type === "movie" || raw.media_type === "tv" ? raw.media_type : null;
+  if (!mediaType) return null;
+  // Reuse the shared media-shape normalization; credits carry the same fields.
+  const normalized = normalizeMediaResult(raw, mediaType);
+  return normalized;
+}
+
+export function adaptPersonCombinedCredits(data: unknown): PersonFilmography {
+  const parsed = personCombinedCreditsSchema.parse(data);
+
+  const castMap = new Map<string, PersonActingCredit>();
+  for (const c of parsed.cast) {
+    const base = toMediaSummaryForCredit(c);
+    if (!base) continue;
+    const key = `${base.mediaType}:${base.id}:${c.character ?? ""}`;
+    if (castMap.has(key)) continue;
+    castMap.set(key, {
+      ...base,
+      character: c.character ?? "",
+      order: c.order ?? 0,
+    });
+  }
+
+  const crewMap = new Map<string, PersonCrewCredit>();
+  for (const c of parsed.crew) {
+    const base = toMediaSummaryForCredit(c);
+    if (!base) continue;
+    const key = `${base.mediaType}:${base.id}:${c.job ?? ""}:${c.department ?? ""}`;
+    if (crewMap.has(key)) continue;
+    crewMap.set(key, {
+      ...base,
+      job: c.job ?? "",
+      department: c.department ?? "",
+    });
+  }
+
+  const byDateDesc = (a: MediaSummary, b: MediaSummary) =>
+    (b.releaseDate ?? "").localeCompare(a.releaseDate ?? "");
+  const cast = [...castMap.values()].sort((a, b) => a.order - b.order || byDateDesc(a, b));
+  const crew = [...crewMap.values()].sort(byDateDesc);
+
+  return { cast, crew };
 }
 
 export function adaptGenres(data: unknown): Genre[] {
